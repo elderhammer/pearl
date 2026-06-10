@@ -53,23 +53,43 @@ task build:pearld       # pearld only
 
 ## Running a Node and vLLM Miner
 
-The setup flow: **build** > **create wallet** > **start node** > **start vLLM miner**.
+The setup flow: **build** > **create wallet** > **start node** > **start wallet** > **generate address** > **start vLLM miner**.
 
-### 1. Create a wallet and get a mining address
+### 1. Create a wallet
 
 ```bash
 ./bin/oyster -u rpcuser -P rpcpass --create
 ```
 
-Follow the prompts to set a passphrase and record your seed. Then start the
-wallet and generate a Taproot mining address:
+Follow the prompts to set a passphrase and record your seed.
+
+### 2. Start the node
+
+Start pearld first so the wallet has a chain backend to connect to:
+
+```bash
+./bin/pearld \
+  --rpcuser=rpcuser \
+  --rpcpass=rpcpass \
+  --rpclisten=0.0.0.0:44107 \
+  --txindex
+```
+
+Key flags: `--testnet` / `--simnet` for non-mainnet, `--notls` to disable TLS,
+`--debuglevel=debug` for verbose logs. See `node/sample-pearld.conf` for all
+options.
+
+### 3. Start the wallet and generate a mining address
+
+With the node running, start the wallet daemon and generate a Taproot
+mining address:
 
 ```bash
 ./bin/oyster -u rpcuser -P rpcpass &
-./bin/prlctl -u rpcuser -P rpcpass -s https://localhost:44207 getnewaddress
+./bin/prlctl -u rpcuser -P rpcpass -s localhost:44207 --wallet getnewaddress
 ```
 
-### 2. Start the node
+Finally, restart pearld with the `--miningaddr` flag to enable mining:
 
 ```bash
 ./bin/pearld \
@@ -79,10 +99,6 @@ wallet and generate a Taproot mining address:
   --miningaddr=<your-taproot-address> \
   --txindex
 ```
-
-Key flags: `--testnet` / `--simnet` for non-mainnet, `--notls` to disable TLS,
-`--debuglevel=debug` for verbose logs. See `node/sample-pearld.conf` for all
-options.
 
 | Network  | RPC   | P2P   | Wallet Server |
 |----------|-------|-------|---------------|
